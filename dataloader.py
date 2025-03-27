@@ -1,7 +1,7 @@
 import os
 import torch
 from PIL import Image as im
-from torchvision import transforms
+from torchvision import transforms as T
 from torch.utils.data import Dataset
 
 import pandas as pd
@@ -12,11 +12,12 @@ class OmniWorldLoader(Dataset):
         self.loc_data = pd.read_csv(data_file)
         self.imgage_paths, self.coordinates = self.load_dataset(image_directory)
 
-        self.transform = transforms.Compose([
-            transforms.Resize((224, 224)),  # Resize to common input size
-            transforms.ToTensor(),          # Convert PIL image to tensor
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], 
-                                std=[0.229, 0.224, 0.225])  # ImageNet normalization
+        self.preprocessor = T.Compose([
+            T.RandomResizedCrop(256),
+            T.RandomApply([T.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1)], p=0.5),
+            T.ToTensor(), 
+            T.ConvertImageDtype(torch.float),
+            T.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
         ])
 
     def load_dataset(self, image_directory):
@@ -34,8 +35,6 @@ class OmniWorldLoader(Dataset):
     def __getitem__(self, idx):
         loc = torch.tensor(self.coordinates[idx], dtype=torch.float)
         img = im.open(self.imgage_paths[idx]).convert('RGB').crop((20, 16, 620, 616))
-
-
-        img = self.transform(img)
+        img = self.preprocessor(img)
 
         return img, loc

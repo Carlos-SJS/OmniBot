@@ -1,22 +1,24 @@
 import torch
 import torch.nn as nn
 from torchvision.models import vit_b_16, ViT_B_16_Weights
-from torchvision import transforms
+from torchvision import transforms as T
+
+import timm
 
 class ImageEncoder(nn.Module):
     def __init__(self, embedding_dim=512):
         super(ImageEncoder, self).__init__()
-
-        weights = ViT_B_16_Weights.IMAGENET1K_V1
-        model = vit_b_16(weights=weights)
-        self.vit = vit_b_16(weights=ViT_B_16_Weights.DEFAULT)
-        feature_dim = self.vit.heads.head.in_features
-        self.vit.heads = nn.Identity()
         
-        for param in self.vit.parameters():
-            param.requires_grad = False
+        self.backbone = self.backbone = timm.create_model(
+            'swinv2_base_window16_256.ms_in1k',
+            pretrained=True
+        )
+        self.backbone.reset_classifier(0)
 
-        self.preprocessor = weights.transforms()
+        feature_dim = self.backbone.num_features
+        
+        for param in self.backbone.parameters():
+            param.requires_grad = False
 
         self.mlp = nn.Sequential(
             nn.Linear(feature_dim, 1024),
@@ -28,8 +30,7 @@ class ImageEncoder(nn.Module):
         return self.preprocessor(img).unsqueeze(0)
 
     def forward(self, x):
-        x = x.to(torch.float32)
-
-        x = self.vit(x)
+        x = self.backbone(x)
         x = self.mlp(x)
+
         return x
