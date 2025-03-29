@@ -25,9 +25,11 @@ class ImageEncoder(nn.Module):
             nn.ReLU(),
             nn.Linear(1024, embedding_dim)
         )
-
-    def preprocess_image(self, img):
-        return self.preprocessor(img).unsqueeze(0)
+    
+    def to(self, device):
+        self.backbone.to(device)
+        self.mlp.to(device)
+        return super().to(device)
 
     def forward(self, x):
         x = self.backbone(x)

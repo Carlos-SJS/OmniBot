@@ -57,7 +57,7 @@ class OmniBot(nn.Module):
         img_embeddings = self.image_encoder(img)
         img_embeddings = F.normalize(img_embeddings, dim=1)
 
-        logits = torch.matmul(img_embeddings, loc_embeddings.T)
+        logits = img_embeddings @ loc_embeddings.T
 
         ix = np.argmax(logits)
         return (self.loc_gallery[ix,0].item(), self.loc_gallery[ix,1].item())
