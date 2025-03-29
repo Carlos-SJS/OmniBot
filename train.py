@@ -13,7 +13,7 @@ def loss_function(image_embeds, loc_embeds):
     #logits = torch.matmul(image_embeds, loc_embeds.T)
     logits = F.cosine_similarity(image_embeds.unsqueeze(1), loc_embeds.unsqueeze(0), dim=-1)
     # Labels are the positives on the diagonal
-    labels = torch.arange(image_embeds.shape[0], device=logits.device, dtype=torch.float)
+    labels = torch.arange(logits.shape[0], device=logits.device)
     
     return F.cross_entropy(logits, labels)
 
@@ -33,7 +33,7 @@ def train(train_dataloader, model, optimizer, epoch, device, temperature = 0.07)
         #rnd_locs = model.loc_galery[indices].to(device)
         #locs_all = torch.cat([locs, rnd_locs]).to(device)
 
-        img_embeddings, loc_embeddings = model.forward(imgs, locs)
+        img_embeddings, loc_embeddings = model(imgs, locs)
         loss = loss_function(img_embeddings, loc_embeddings)
 
         optimizer.zero_grad()

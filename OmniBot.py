@@ -23,11 +23,10 @@ class OmniBot(nn.Module):
         for _, data in loc_data.iterrows():
             coordinates.append((data["lat"], data["lng"]))
         
-        self.loc_galery = torch.tensor(coordinates, dtype=torch.float)
+        self.loc_gallery = torch.tensor(coordinates, dtype=torch.float)
 
-        self.preprocessor = T.Compose([
-            T.RandomResizedCrop(256),
-            T.RandomApply([T.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1)], p=0.5),
+        self.preprocessor_predict = T.Compose([
+            T.Resize(256),
             T.ToTensor(), 
             T.ConvertImageDtype(torch.float),
             T.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
@@ -49,11 +48,11 @@ class OmniBot(nn.Module):
 
     @torch.no_grad()
     def predict(self, img_path):
-        loc_embeddings = self.location_encoder(self.loc_galery)
+        loc_embeddings = self.location_encoder(self.loc_gallery)
         loc_embeddings = F.normalize(loc_embeddings, dim=1)
 
         img = im.open(img_path).convert('RGB')
-        img = self.preprocessor(img).unsqueeze(0)
+        img = self.preprocessor_predict(img).unsqueeze(0)
 
         img_embeddings = self.image_encoder(img)
         img_embeddings = F.normalize(img_embeddings, dim=1)
@@ -61,6 +60,6 @@ class OmniBot(nn.Module):
         logits = torch.matmul(img_embeddings, loc_embeddings.T)
 
         ix = np.argmax(logits)
-        return (self.loc_galery[ix,0].item(), self.loc_galery[ix,1].item())
+        return (self.loc_gallery[ix,0].item(), self.loc_gallery[ix,1].item())
 
         
