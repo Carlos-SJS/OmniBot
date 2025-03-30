@@ -3,19 +3,32 @@ from torch import nn
 import torch.nn.functional as F
 from tqdm import tqdm
 
-def loss_function(image_embeds, loc_embeds):
-    # Normalize embeddings
-    image_embeds = F.normalize(image_embeds, dim=1)
-    loc_embeds = F.normalize(loc_embeds, dim=1)
-    
-    # Compute similarity matrix
-    
-    #logits = torch.matmul(image_embeds, loc_embeds.T)
-    logits = F.cosine_similarity(image_embeds.unsqueeze(1), loc_embeds.unsqueeze(0), dim=-1)
-    # Labels are the positives on the diagonal
+def loss_function(logits):
     labels = torch.arange(logits.shape[0], device=logits.device)
     
     return F.cross_entropy(logits, labels)
+
+def haversine_dist(lat1, lng1, lat2, lng2):
+    R = 6371.0 #approximate earth radius (Km)
+
+    lat1, lng1, lat2, lng2 = map(torch.deg2rad, (lat1, lng1, lat2, lng2))
+    
+    dlat = lat2 - lat1
+    dlng = lng2 - lng1
+
+    a = torch.sin(dlat/2)**2 + torch.cos(lat1)*torch.cos(lat2)*torch.sin(dlng/2)**2
+    return 2*R*torch.arcsin(torch.sqrt(a))
+
+def distance_based_loss(logits, locs):
+    lat, lng = locs[:,0:1], locs[:,1:2]
+    lat1, lat2 = lat, lat.T
+    lng1, lng2 = lng, lng.T
+
+    dst_matrix = haversine_dist(lat1, lng1, lat2, lng2)
+    softmax_logits = logits.softmax(dim=-1)
+
+    return torch.mean(dst_matrix * softmax_logits)/1000
+
 
 def train(train_dataloader, model, optimizer, epoch, device, temperature = 0.07):
     print("Starting Epoch", epoch)
@@ -26,6 +39,8 @@ def train(train_dataloader, model, optimizer, epoch, device, temperature = 0.07)
     acc_loss = 0
 
     for i ,(imgs, locs) in bar:
+        optimizer.zero_grad()
+        
         imgs = imgs.to(device)
         locs = locs.to(device)
 
@@ -34,9 +49,13 @@ def train(train_dataloader, model, optimizer, epoch, device, temperature = 0.07)
         #locs_all = torch.cat([locs, rnd_locs]).to(device)
 
         img_embeddings, loc_embeddings = model(imgs, locs)
-        loss = loss_function(img_embeddings, loc_embeddings)
+        img_embeddings = F.normalize(img_embeddings, dim=1)
+        loc_embeddings = F.normalize(loc_embeddings, dim=1)
 
-        optimizer.zero_grad()
+        logits = img_embeddings @ loc_embeddings.T
+        
+        loss = distance_based_loss(logits, locs)
+
         loss.backward()
         optimizer.step()
 
