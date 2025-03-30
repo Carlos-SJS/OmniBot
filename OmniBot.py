@@ -15,7 +15,7 @@ class OmniBot(nn.Module):
     def __init__(self):
         super().__init__()
 
-        self.location_encoder = LocationEncoder()
+        self.location_encoder = LocationEncoder(from_pretrained=False)
         self.image_encoder = image_encoder.ImageEncoder()
 
         loc_data = pd.read_csv(r"C:\Users\carlo\Documents\Python\Geo\ds\dataset_generation\omniworld_locations.csv")

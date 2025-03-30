@@ -15,10 +15,8 @@ class OmniWorldLoader(Dataset):
         if validation:
             self.create_preprocessor_val()
         else:
-            self.create_preprocessor_train
+            self.create_preprocessor_train()
         
-    
-
     def create_preprocessor_train(self):
         self.img_preprocessor = T.Compose([
             T.RandomResizedCrop(256),

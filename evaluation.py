@@ -40,7 +40,7 @@ def eval_model(model, val_dataloader, device='cpu'):
 
     locs = model.loc_gallery.to('cpu').numpy()
 
-    distance_thresholds = [100000, 2500, 750, 200, 25, 1]
+    distance_thresholds = [100000, 10000, 5000, 2500, 750, 200, 25, 1]
     dst_counts = [0 for _ in range(len(distance_thresholds))]
 
     avg_dist = 0
@@ -58,8 +58,3 @@ def eval_model(model, val_dataloader, device='cpu'):
     print(f"Avg. Distance: {avg_dist}")
     for i, cnt in enumerate(dst_counts):
         print(f"Accuracy at {distance_thresholds[i]}: {cnt/preds.shape[0]}")
-        
-
-        
-
-
