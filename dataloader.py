@@ -8,9 +8,10 @@ import pandas as pd
 
 class OmniWorldLoader(Dataset):
     
-    def __init__(self, image_directory, data_file, validation = False):
+    def __init__(self, image_directory, data_file, validation = False, image_size = 224):
         self.loc_data = pd.read_csv(data_file)
         self.imgage_paths, self.coordinates = self.load_dataset(image_directory)
+        self.image_size = image_size
 
         if validation:
             self.create_preprocessor_val()
@@ -19,7 +20,7 @@ class OmniWorldLoader(Dataset):
         
     def create_preprocessor_train(self):
         self.img_preprocessor = T.Compose([
-            T.RandomResizedCrop(256),
+            T.RandomResizedCrop(self.image_size),
             T.RandomApply([T.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1)], p=0.5),
             T.ToTensor(), 
             T.ConvertImageDtype(torch.float),
@@ -28,7 +29,7 @@ class OmniWorldLoader(Dataset):
     
     def create_preprocessor_val(self):
         self.img_preprocessor = T.Compose([
-            T.Resize(256),
+            T.Resize(self.image_size),
             T.ToTensor(), 
             T.ConvertImageDtype(torch.float),
             T.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
