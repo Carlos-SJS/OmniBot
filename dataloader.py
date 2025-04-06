@@ -21,7 +21,8 @@ class OmniWorldLoader(Dataset):
     def create_preprocessor_train(self):
         self.img_preprocessor = T.Compose([
             T.RandomResizedCrop(self.image_size),
-            T.RandomApply([T.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1)], p=0.5),
+            T.RandomHorizontalFlip(),
+            T.RandomApply([T.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1)], p=0.8),
             T.ToTensor(), 
             T.ConvertImageDtype(torch.float),
             T.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
@@ -38,8 +39,9 @@ class OmniWorldLoader(Dataset):
     def load_dataset(self, image_directory):
         coordinates = []
         img_paths = []
+
         for i, data in self.loc_data.iterrows():
-            coordinates.append((data["lat"], data["lng"]))
+            coordinates.append(torch.tensor((data["lat"], data["lng"]), dtype=torch.float))
             img_paths.append(os.path.join(image_directory, f"{i}.jpg"))
         
         return img_paths, coordinates
@@ -48,7 +50,7 @@ class OmniWorldLoader(Dataset):
         return self.loc_data.shape[0]
 
     def __getitem__(self, idx):
-        loc = torch.tensor(self.coordinates[idx], dtype=torch.float)
+        loc = self.coordinates[idx]
         img = im.open(self.imgage_paths[idx]).convert('RGB').crop((20, 16, 620, 616))
         img = self.img_preprocessor(img)
 
