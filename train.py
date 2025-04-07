@@ -47,7 +47,7 @@ def train(train_dataloader, model, optimizer, epoch, device, temperature = 0.07,
     print("Starting Epoch", epoch)
 
     bar = tqdm(enumerate(train_dataloader), total=len(train_dataloader))
-    model.to(device)
+    model = model.to(device)
 
     acc_loss = 0
 

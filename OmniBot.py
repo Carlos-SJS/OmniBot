@@ -35,10 +35,11 @@ class OmniBot(nn.Module):
         #    param.requires_grad = False
     
     def to(self, device):
-        self.image_encoder.to(device)
-        self.location_encoder.to(device)
+        self.image_encoder = self.image_encoder.to(device)
+        self.location_encoder = self.location_encoder.to(device)
         self.loc_gallery = self.loc_gallery.to(device)
         return super().to(device)
+
 
     def forward(self, img, loc):
         img_embeddings = self.image_encoder(img)
