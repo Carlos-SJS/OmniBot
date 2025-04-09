@@ -25,7 +25,7 @@ class OmniBot(nn.Module):
         self.loc_gallery = torch.tensor(coordinates, dtype=torch.float)
 
         self.preprocessor_predict = T.Compose([
-            T.Resize(256),
+            T.Resize(224),
             T.ToTensor(), 
             T.ConvertImageDtype(torch.float),
             T.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
