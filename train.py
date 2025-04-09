@@ -5,7 +5,6 @@ from tqdm import tqdm
 
 def loss_function(logits, _ = None):
     labels = torch.arange(logits.shape[0], device=logits.device)
-    
     return F.cross_entropy(logits, labels)
 
 def haversine_dist(lat1, lng1, lat2, lng2):
@@ -30,11 +29,27 @@ def distance_matrix(locs):
 
     return torch.mean(softmax_logits @ dst_matrix)
 
-def distance_based_loss(logits, locs, temperature = 75):
-    dst_matrix = torch.exp(- distance_matrix(locs)/temperature)
+def distance_based_loss(logits, locs, temperature = 1000):
+    dst_matrix = distance_matrix(locs)/temperature
     softmax_logits = logits.softmax(dim=-1)
 
-    loss = -torch.mean(torch.log(softmax_logits + 1e-8) * dst_matrix[:softmax_logits.shape[0],:])
+    return torch.mean(softmax_logits @ dst_matrix)
+    
+    dst_matrix = torch.exp(- distance_matrix(locs)/temperature) * -5 + 5
+    softmax_logits = logits.softmax(dim=-1)
+
+    #loss = -torch.mean(torch.log(softmax_logits + 1e-8) * dst_matrix[:softmax_logits.shape[0],:])
+    loss = torch.mean(softmax_logits @ dst_matrix)
+    return loss
+
+def soft_contrastive_loss(logits, locs, temperature=30):
+    dst_matrix = distance_matrix(locs)[:logits.shape[0],:]/15000
+    softmax_logits = F.log_softmax(logits, dim=1)
+
+    soft_targets = torch.exp(-temperature * dst_matrix)
+    soft_targets /= soft_targets.sum(dim=1, keepdim=True)
+
+    loss = F.kl_div(softmax_logits, soft_targets, reduction='batchmean')
     return loss
 
 def combined_loss(logits, locs):
